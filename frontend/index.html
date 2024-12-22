@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Evolve Compiler</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, rgba(0, 123, 189, 0.7), rgba(8, 210, 255, 0.634), rgba(63, 94, 251, 0.7));
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: 400% 400%;
+            animation: gradientBG 6s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            height: 80%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .output-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #2a2d34;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            background-color: #2a2d34;
+            padding: 7px 18px;
+            border-bottom: 1px solid #444;
+        }
+
+        .header .logo {
+            margin-left: 27px;
+            align-items: center;
+        }
+
+        .header .actions {
+            margin-left: auto;
+            display: flex;
+            gap: 12px;
+        }
+
+        .header .actions button {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            color: #e0e5ec;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            border-radius: 28px;
+            background: linear-gradient(315deg, #26292f, #2d3038);
+            box-shadow: -3px -3px 6px #23262c,
+                3px 3px 6px #31343c;
+        }
+
+        .header .actions button:hover {
+            box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.2), inset -1px -1px 3px rgba(0, 0, 0, 0.2);
+            transform: translateY(0);
+        }
+
+        .header .actions button:active {
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.3), inset -2px -2px 5px rgba(0, 0, 0, 0.3);
+            transform: translateY(1px);
+        }
+
+        #editor {
+            height: 100%;
+            width: 100%;
+        }
+
+        #editor::-webkit-scrollbar {
+            display: none;
+        }
+
+        #editor-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        #output-panel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .resizer {
+            width: 1px;
+            cursor: ew-resize;
+            background: #444;
+            position: relative;
+            z-index: 10;
+        }
+
+        .tabs-container {
+            display: flex;
+            background: #1e2531;
+            padding: 10px;
+            justify-content: flex-start;
+            gap: 15px;
+        }
+
+        .tabs-container button {
+            border: none;
+            background: transparent;
+            color: #08d2ff;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .tabs-container button.active {
+            background-color: #444;
+            color: #ffffff;
+        }
+
+        .tabs-container button:hover {
+            background-color: #555;
+        }
+
+        .panel {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #d3d5db;
+            display: none;
+        }
+
+        .panel.visible {
+            display: block;
+        }
+
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container.fullscreen {
+            width: 100%;
+            height: 100%;
+        }
+
+        .editor-container.fullscreen,
+        .output-container.fullscreen {
+            width: 50%;
+            height: 100%;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #ffffff;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #08d2ff;
+            color: #151515;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: #2a2d34;
+            color: #e1e1e1;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-container input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #151515;
+            background: #ffffff;
+            outline: none;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .input-container button {
+            padding: 10px 20px;
+            background: #08d2ff;
+            border: none;
+            border-radius: 20px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .input-container button:hover {
+            background: #007bbd;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .settings-panel {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background: rgba(41, 41, 41, 0.9);
+            color: #e1e1e1;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .settings-panel h3 {
+            margin: 0 0 10px;
+        }
+
+        .settings-panel label {
+            font-size: 14px;
+        }
+
+        .settings-panel input,
+        .settings-panel select {
+            margin: 5px 0 10px;
+            padding: 5px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .settings-panel button {
+            background: #08d2ff;
+            border: none;
+            color: #151515;
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .settings-panel button:hover {
+            background: #007bbd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="main-container">
+
+        <div class="editor-container" id="editor-container" style="width: 81%;">
+            <div class="header">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="evolve" width="84px" height="18px">
+                </div>
+                <div class="actions">
+                    <button title="Upload code" id="upload-button"><i class="fas fa-upload"></i></button>
+                    <button onclick="runCode()" title="Run Code"><i class="fas fa-play"></i></button>
+                    <button onclick="downloadCode()" title="Download code"><i class="fas fa-download"></i></button>
+                    <button title="Copy code" id="copy-button"><i class="fas fa-copy"></i></button>
+                    <button onclick="clearEditor()" title="Clear Editor"><i class="fas fa-times"></i></button>
+                    <button onclick="toggleFullscreen()" title="Fullscreen"><i class="fas fa-expand"></i></button>
+                    <button onclick="toggleSettings()" title="Settings"><i class="fas fa-cog"></i></button>
+                </div>
+                <div id="settings-panel" class="settings-panel">
+                    <h3>Settings</h3>
+                    <label for="font-size">Font Size:</label>
+                    <input type="number" id="font-size" min="10" max="50" value="16">
+                    <br>
+                    <label for="font-family">Font Family:</label>
+                    <select id="font-family">
+                        <option value="monospace">Monospace</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Roboto">Roboto</option>
+                    </select>
+                    <br>
+                    <button onclick="applySettings()">Apply</button>
+                </div>
+
+            </div>
+            <div id="editor"></div>
+        </div>
+
+        <div class="resizer" id="resizer"></div>
+
+        <div class="output-container" id="output-container" style="width: 50%;">
+            <div class="tabs-container">
+                <button class="active" id="output-tab" onclick="switchTab('output')">Output</button>
+                <button id="ai-tab" onclick="switchTab('ai')">AI Chat</button>
+            </div>
+            <div class="panel visible" id="output-panel"></div>
+            <div class="panel" id="ai-panel">
+                <div class="chat-container">
+                    <div class="messages" id="messages"></div>
+                    <div class="input-container">
+                        <input type="text" id="user-input" placeholder="Ask about the code..." />
+                        <button onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/dracula");
+        editor.session.setMode("ace/mode/python");
+        editor.setFontSize(16);
+
+        async function runCode() {
+            const code = editor.getValue();
+            const response = await fetch('/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code })
+            });
+
+            const result = await response.json();
+            const output = (result.output || result.error || '').split('\n').join('<br>');
+            document.getElementById('output-panel').innerHTML = output;
+            switchTab('output');
+        }
+
+        function downloadCode() {
+            const code = editor.getValue();
+            const blob = new Blob([code], { type: "text/x-python" });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "evolve.py";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function clearEditor() {
+            editor.setValue("", -1);
+            document.getElementById('output-panel').textContent = "";
+        }
+
+        function switchTab(tab) {
+            const outputTab = document.getElementById('output-tab');
+            const aiTab = document.getElementById('ai-tab');
+            const outputPanel = document.getElementById('output-panel');
+            const aiPanel = document.getElementById('ai-panel');
+
+            if (tab === 'output') {
+                outputTab.classList.add('active');
+                aiTab.classList.remove('active');
+                outputPanel.classList.add('visible');
+                aiPanel.classList.remove('visible');
+            } else if (tab === 'ai') {
+                aiTab.classList.add('active');
+                outputTab.classList.remove('active');
+                outputPanel.classList.remove('visible');
+                aiPanel.classList.add('visible');
+            }
+        }
+
+        function toggleFullscreen() {
+            const container = document.getElementById('main-container');
+            container.classList.toggle('fullscreen');
+            const editorContainer = document.getElementById('editor-container');
+            const outputContainer = document.getElementById('output-container');
+
+            if (container.classList.contains('fullscreen')) {
+                editorContainer.classList.add('fullscreen');
+                outputContainer.classList.add('fullscreen');
+            } else {
+                editorContainer.classList.remove('fullscreen');
+                outputContainer.classList.remove('fullscreen');
+            }
+        }
+
+        const resizer = document.getElementById("resizer");
+        let isResizing = false;
+        let lastDownX = 0;
+
+        resizer.addEventListener("mousedown", (e) => {
+            isResizing = true;
+            lastDownX = e.clientX;
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isResizing) return;
+            const offsetRight = document.body.clientWidth - e.clientX;
+            const editorContainer = document.getElementById("editor-container");
+            const outputContainer = document.getElementById("output-container");
+
+            editorContainer.style.width = `${e.clientX}px`;
+            outputContainer.style.width = `${offsetRight}px`;
+        });
+
+        document.addEventListener("mouseup", () => {
+            isResizing = false;
+        });
+
+        document.getElementById("upload-button").addEventListener("click", () => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".py";
+            input.click();
+
+            input.addEventListener("change", (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const code = e.target.result;
+                    editor.setValue(code, -1);
+                };
+                reader.readAsText(file);
+            });
+        });
+
+        document.getElementById("copy-button").addEventListener("click", () => {
+            const code = editor.getValue();
+            navigator.clipboard.writeText(code).then(() => {
+                console.log("code copied");
+            }).catch(err => {
+                console.error("Failed to copy: ", err);
+            });
+        });
+
+
+        function toggleSettings() {
+            const settingsPanel = document.getElementById("settings-panel");
+            settingsPanel.style.display = settingsPanel.style.display === "block" ? "none" : "block";
+        }
+
+        function applySettings() {
+            const fontSize = document.getElementById("font-size").value;
+            const fontFamily = document.getElementById("font-family").value;
+
+            editor.setFontSize(parseInt(fontSize, 10));
+            editor.setOptions({
+                fontFamily: fontFamily,
+            });
+            toggleSettings();
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById("user-input").value.trim();
+            if (!userInput) return;
+
+            const code = editor.getValue();
+
+            appendMessage(userInput, "user");
+            document.getElementById("user-input").value = "";
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ message: userInput, code }),
+                });
+
+                const data = await response.json();
+                if (data.response) {
+                    appendMessage(data.response, "ai");
+                } else {
+                    appendMessage("No response from AI.", "ai");
+                }
+            } catch (error) {
+                appendMessage("Error fetching AI response. Please try again.", "error");
+            }
+        }
+
+        function appendMessage(message, type) {
+            const messagesContainer = document.getElementById("messages");
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message", type);
+            messageElement.innerText = message;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function getAIResponse(input) {
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ message: input })
+                });
+
+                console.log("response status", response.status);
+
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const data = await response.json();
+                console.log("Parsed response", data);
+                return data.response || "No response from AI.";
+            } catch (error) {
+                console.error("Error communicating with AI:", error);
+                appendMessage(`Error:${error.message}`, "error");
+                throw error;
+            }
+        }
+    </script>
+</body>
+
+</html>
