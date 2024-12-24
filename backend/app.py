@@ -2,15 +2,20 @@ from flask import Flask, render_template_string, render_template, request, jsoni
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from models import db,User
 import os
 import subprocess
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 app = Flask(__name__,template_folder='../frontend',static_folder='../frontend/static')
-app.secret_key = '9b3c7cabc49e4f8e8c676b04fa35f37a47c95195e1674e36e1a9d47bcd1935fd'
-login_manager = LoginManager(app)
-login_manager.login_view = "login"
+app.config['SECRET_KEY'] = '9b3c7cabc49e4f8e8c676b04fa35f37a47c95195e1674e36e1a9d47bcd1935fd'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db.init_app(app)
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+login_manager.init_app(app)
 
 CORS(app)
 
@@ -29,62 +34,66 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return users.get(user_id)
+    return User.query.get(int(user_id))
+
+with app.app_context():
+    db.create_all()
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-        # Check if email already exists
-        if email in users:
-            flash("Email already registered!")
+        user = User.query.filter_by(email=email).first()
+        if user:
+            flash('Email already exists.', 'danger')
             return redirect(url_for('register'))
 
-        # Add user to in-memory store
-        user_id = str(len(users) + 1)
-        users[email] = User(user_id, email, generate_password_hash(password))
-        flash("Registration successful! Please log in.")
+        new_user = User(email=email, password=generate_password_hash(password, method='sha256'))
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Account created successfully!', 'success')
         return redirect(url_for('login'))
-
     return render_template('register.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        user = users.get(email)
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-        if user and check_password_hash(user.password_hash, password):
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
             login_user(user)
-            flash("Login successful!")
-            return redirect(url_for('index'))
+            return redirect(url_for('dashboard'))
         else:
-            flash("Invalid credentials, please try again.")
-    
+            flash('Invalid credentials. Please try again.', 'danger')
+
     return render_template('login.html')
 
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('index.html')  # Redirects to main editor page
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    flash("Logged out successfully.")
+    flash('Logged out successfully.', 'success')
     return redirect(url_for('login'))
 
-
-@app.route('/protected')
-@login_required
-def protected():
-    return f"Hello, {current_user.username}! You are logged in."
-
-
 @app.route('/')
-@login_required
+# @login_required
 def index():
     return render_template('index.html')
+
+
+@app.route('/landing')
+def landing():
+    return render_template('landing.html')
 
 @app.route('/execute', methods=['POST'])
 def execute_code():
