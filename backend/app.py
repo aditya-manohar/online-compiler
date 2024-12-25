@@ -57,7 +57,6 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -89,7 +88,6 @@ def logout():
 # @login_required
 def index():
     return render_template('index.html')
-
 
 @app.route('/landing')
 def landing():
@@ -135,7 +133,7 @@ def chat():
         prompt = f"Here is the python code:\n\n{editor_code}\n\n{user_message}\n\nAI response:"
 
         print(f"Received user message: {prompt}")
-
+        
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
         inputs = tokenizer.encode(prompt, return_tensors='pt',padding=True,truncation=True).to("cpu")
