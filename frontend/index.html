@@ -349,6 +349,9 @@
                     <img src="{{ url_for('static', filename='logo.png') }}" alt="evolve" width="84px" height="18px">
                 </div>
                 <div class="actions">
+                    <button title="Voice Input" id="voice-toggle-btn" onclick="toggleVoiceInput()">
+                        <i class="fas fa-microphone"></i>
+                    </button>
                     <button title="Upload code" id="upload-button"><i class="fas fa-upload"></i></button>
                     <button onclick="runCode()" title="Run Code"><i class="fas fa-play"></i></button>
                     <button onclick="downloadCode()" title="Download code"><i class="fas fa-download"></i></button>
@@ -401,6 +404,39 @@
         editor.setTheme("ace/theme/dracula");
         editor.session.setMode("ace/mode/python");
         editor.setFontSize(16);
+
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        let isListening = false;
+
+        function toggleVoiceInput() {
+            const voiceButton = document.getElementById('voice-toggle-btn');
+            if (isListening) {
+                recognition.stop();
+                voiceButton.classList.remove('listening');
+            } else {
+                recognition.start();
+                voiceButton.classList.add('listening');
+            }
+            isListening = !isListening;
+        }
+
+        recognition.onresult = function (event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            document.getElementById('user-input').value = transcript;
+        };
+
+        recognition.onend = function () {
+            if (document.getElementById('user-input').value.trim()) {
+                sendMessage();
+            }
+        }
 
         async function runCode() {
             const code = editor.getValue();

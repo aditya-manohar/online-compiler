@@ -124,6 +124,7 @@ def chat():
     data = request.json
     user_message = data.get("message")
     editor_code = data.get("code")
+    
     try:
         user_message = request.json.get("message")
         
