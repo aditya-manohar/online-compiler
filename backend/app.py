@@ -1,21 +1,23 @@
 from flask import Flask, render_template_string, render_template, request, jsonify, url_for, flash, session, redirect
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db,User
 import os
 import subprocess
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from models import db,User
 
 app = Flask(__name__,template_folder='../frontend',static_folder='../frontend/static')
 app.config['SECRET_KEY'] = '9b3c7cabc49e4f8e8c676b04fa35f37a47c95195e1674e36e1a9d47bcd1935fd'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+login_manager = LoginManager(app)
 db.init_app(app)
-login_manager = LoginManager()
-login_manager.login_view = 'login'
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 
 CORS(app)
 
@@ -24,13 +26,6 @@ users = {}
 model_name = "distilgpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name).to('cpu') 
-
-class User(UserMixin):
-    def __init__(self,id,email,password_hash):
-        self.id = id
-        self.email = email
-        self.password_hash = password_hash
-
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -50,7 +45,7 @@ def register():
             flash('Email already exists.', 'danger')
             return redirect(url_for('register'))
 
-        new_user = User(email=email, password=generate_password_hash(password, method='sha256'))
+        new_user = User(email=email, password=generate_password_hash(password, method='pbkdf2:sha256'))
         db.session.add(new_user)
         db.session.commit()
         flash('Account created successfully!', 'success')
@@ -64,9 +59,11 @@ def login():
         password = request.form.get('password')
 
         user = User.query.filter_by(email=email).first()
+
         if user and check_password_hash(user.password, password):
             login_user(user)
-            return redirect(url_for('dashboard'))
+            flash('Login successful!','success')
+            return redirect(url_for('index'))
         else:
             flash('Invalid credentials. Please try again.', 'danger')
 

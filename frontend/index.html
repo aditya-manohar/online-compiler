@@ -349,13 +349,9 @@
                     <img src="{{ url_for('static', filename='logo.png') }}" alt="evolve" width="84px" height="18px">
                 </div>
                 <div class="actions">
-<<<<<<< HEAD
                     <button title="Voice Input" id="voice-toggle-btn" onclick="toggleVoiceInput()">
                         <i class="fas fa-microphone"></i>
                     </button>
-=======
-                    <button onclick="startVoiceCoding()" title="Voice coding"><i class="fas fa-microphone"></i></button>
->>>>>>> origin/main
                     <button title="Upload code" id="upload-button"><i class="fas fa-upload"></i></button>
                     <button onclick="runCode()" title="Run Code"><i class="fas fa-play"></i></button>
                     <button onclick="downloadCode()" title="Download code"><i class="fas fa-download"></i></button>
@@ -409,7 +405,6 @@
         editor.session.setMode("ace/mode/python");
         editor.setFontSize(16);
 
-<<<<<<< HEAD
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.continuous = true;
         recognition.interimResults = true;
@@ -440,77 +435,6 @@
         recognition.onend = function () {
             if (document.getElementById('user-input').value.trim()) {
                 sendMessage();
-=======
-        let recognition;
-        let isListening = false;
-        let lastRecognizedText = "";
-        let debounceTimer = null;
-
-        function startVoiceCoding() {
-            // Check if the browser supports webkitSpeechRecognition (Google Chrome)
-            if (!('webkitSpeechRecognition' in window)) {
-                alert("Your browser doesn't support speech recognition. Please use Google Chrome.");
-                return;
-            }
-
-            if (isListening) {
-                // Stop recognition if already listening
-                recognition.stop();
-                isListening = false;
-                console.log("Voice recognition stopped.");
-            } else {
-                // Initialize speech recognition
-                recognition = new webkitSpeechRecognition();
-                recognition.lang = 'en-US'; // Set language to English
-                recognition.continuous = true; // Keep listening continuously
-                recognition.interimResults = true; // Allow interim results for ongoing speech
-
-                recognition.onstart = () => {
-                    console.log("Voice recognition started. Speak now...");
-                };
-
-                recognition.onresult = async (event) => {
-                    const transcript = event.results[event.results.length - 1][0].transcript;
-                    console.log(transcript);
-
-                    // Check if the result is final (end of speech)
-                    const isFinal = event.results[event.results.length - 1].isFinal;
-
-                    // Only process final results and prevent duplicate submissions
-                    if (isFinal && transcript !== lastRecognizedText) {
-                        console.log("Voice input recognized:", transcript);
-
-                        // Update the last recognized text
-                        lastRecognizedText = transcript;
-
-                        // Optional debounce to prevent quick repeated submissions
-                        clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(async () => {
-                            // Display the recognized text as a user message in the chat
-                            appendMessage(transcript, "user");
-
-                            // Send the recognized text to the backend (AI) for a response
-                            await sendMessage(transcript);
-                        }, 300); // 300ms delay
-                    }
-                };
-
-                recognition.onerror = (event) => {
-                    console.error("Speech recognition error:", event.error);
-                    alert("Speech recognition error occurred. Please try again.");
-                };
-
-                recognition.onend = () => {
-                    console.log("Voice recognition stopped.");
-                    if (isListening) {
-                        recognition.start(); // Restart if still enabled
-                    }
-                };
-
-                recognition.start(); // Start listening for speech
-                isListening = true;
-                console.log("Voice recognition started");
->>>>>>> origin/main
             }
         }
 
@@ -651,23 +575,26 @@
             toggleSettings();
         }
 
-        async function sendMessage(message) {
-            const code = editor.getValue();
-            appendMessage(message, "user");
+        async function sendMessage() {
+            const userInput = document.getElementById("user-input").value.trim();
+            if (!userInput) return;
 
+            const code = editor.getValue();
+
+            appendMessage(userInput, "user");
+            document.getElementById("user-input").value = "";
             try {
                 const response = await fetch("/chat", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ message, code }),
+                    body: JSON.stringify({ message: userInput, code }),
                 });
 
                 const data = await response.json();
                 if (data.response) {
                     appendMessage(data.response, "ai");
-                    console.log(data.response);
                 } else {
                     appendMessage("No response from AI.", "ai");
                 }
