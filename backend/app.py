@@ -37,19 +37,21 @@ with app.app_context():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-
-        user = User.query.filter_by(email=email).first()
-        if user:
-            flash('Email already exists.', 'danger')
-            return redirect(url_for('register'))
-
-        new_user = User(email=email, password=generate_password_hash(password, method='pbkdf2:sha256'))
-        db.session.add(new_user)
-        db.session.commit()
-        flash('Account created successfully!', 'success')
+        email = request.form['email']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        
+        # Check if password length is at least 6 characters
+        if len(password) < 6:
+            return render_template('register.html', error="Password must be at least 6 characters!")
+        
+        # Check if password and confirm password match
+        if password != confirm_password:
+            return render_template('register.html', error="Passwords do not match.")
+        
+        # Proceed with registration logic here (e.g., saving to the database)
         return redirect(url_for('login'))
+    
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -82,9 +84,10 @@ def logout():
     return redirect(url_for('login'))
 
 @app.route('/')
-# @login_required
+@login_required
 def index():
-    return render_template('index.html')
+    username = current_user.email.split('@')[0]
+    return render_template('index.html', username=username)
 
 @app.route('/landing')
 def landing():

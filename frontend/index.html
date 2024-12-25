@@ -12,13 +12,13 @@
             margin: 0;
             padding: 0;
             font-family: 'Roboto', sans-serif;
-            /* background: linear-gradient(135deg, rgba(0, 123, 189, 0.7), rgba(8, 210, 255, 0.634), rgba(63, 94, 251, 0.7)); */
             background: #222328;
             color: #ffffff;
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             background-size: 400% 400%;
             animation: gradientBG 6s ease infinite;
         }
@@ -41,9 +41,66 @@
             display: none;
         }
 
+        .navbar {
+            background-color: #222329;
+            color: white;
+            padding: 15px 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            box-sizing: border-box;
+        }
+
+        .navbar h1 {
+            font-size: 21px;
+            font-weight: bold;
+            font-family: Verdana, Geneva, Tahoma, sans-serif;
+            color: #ccc;
+            margin: 0;
+        }
+
+        .navbar a {
+            text-decoration: none;
+            color: #00aaff;
+            font-size: 16px;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .navbar .logout {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: #d32f2f;
+            font-size: 14px;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .navbar .logout i {
+            margin-right: 8px;
+            font-size: 18px;
+        }
+
+        .navbar .logout:hover {
+            background-color: #d32f2f;
+            color: white;
+        }
+
         .container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1215px;
             height: 80%;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
@@ -51,6 +108,7 @@
             display: flex;
             position: relative;
             overflow: hidden;
+            margin-top: 60px;
         }
 
         .editor-container {
@@ -347,6 +405,13 @@
 </head>
 
 <body>
+    <div class="navbar">
+        <h1>Welcome, {{ username }}!</h1>
+        <button class="logout" onclick="window.location.href='{{ url_for('logout') }}'">
+            <i class="fas fa-sign-out-alt"></i> Log Out
+        </button>
+    </div>
+
     <div class="container" id="main-container">
 
         <div class="editor-container" id="editor-container" style="width: 81%;">
@@ -409,6 +474,7 @@
         const editor = ace.edit("editor");
         editor.setTheme("ace/theme/dracula");
         editor.session.setMode("ace/mode/python");
+        editor.setShowPrintMargin(false);
         editor.setFontSize(16);
 
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
