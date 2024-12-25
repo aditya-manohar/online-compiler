@@ -188,9 +188,6 @@
             height: 100%;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         .container.fullscreen {
@@ -200,8 +197,17 @@
 
         .editor-container.fullscreen,
         .output-container.fullscreen {
-            width: 50%;
+            width: 100%;
             height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .header.fullscreen {
+            width: 100%;
+            position: relative;
+            top: 0;
         }
 
         .chat-container {
@@ -494,16 +500,32 @@
 
         function toggleFullscreen() {
             const container = document.getElementById('main-container');
-            container.classList.toggle('fullscreen');
-            const editorContainer = document.getElementById('editor-container');
-            const outputContainer = document.getElementById('output-container');
 
-            if (container.classList.contains('fullscreen')) {
-                editorContainer.classList.add('fullscreen');
-                outputContainer.classList.add('fullscreen');
+            if (!document.fullscreenElement &&
+                !document.webkitFullscreenElement &&
+                !document.mozFullScreenElement &&
+                !document.msFullscreenElement) {
+
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                } else if (container.mozRequestFullScreen) {
+                    container.mozRequestFullScreen();
+                } else if (container.msRequestFullscreen) {
+                    container.msRequestFullscreen();
+                }
+
             } else {
-                editorContainer.classList.remove('fullscreen');
-                outputContainer.classList.remove('fullscreen');
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
             }
         }
 
