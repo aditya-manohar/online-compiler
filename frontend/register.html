@@ -11,7 +11,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Arial', sans-serif;
-            background: #222328;
+            background: black;
             color: #ffffff;
             height: 100vh;
             display: flex;
@@ -37,25 +37,71 @@
         }
 
         .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             width: 100%;
-            max-width: 500px;
-            background-color: rgba(12, 12, 12, 0.7);
+            max-width: 1200px;
+            margin: 0 20px;
+        }
+
+        .logo-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo {
+            width: 300px;
+            height: auto;
+        }
+
+        .register-container {
+            background-color: rgba(12, 12, 12, 0.6);
             border-radius: 15px;
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
             box-sizing: border-box;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(8px);
-            padding: 30px;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease-in-out;
         }
 
         h1 {
             text-align: center;
             color: #ffffff;
+            margin-bottom: 30px;
+            font-size: 36px;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .flashes {
+            list-style: none;
+            padding: 0;
             margin-bottom: 20px;
-            font-size: 26px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .flashes li {
+            background-color: #ffcccc;
+            color: #d8000c;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .flashes .success {
+            background-color: #d4edda;
+            color: #155724;
         }
 
         .form-group {
@@ -126,36 +172,74 @@
             font-size: 12px;
             margin-top: 5px;
         }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .logo-section {
+                margin-bottom: 30px;
+            }
+
+            .register-container {
+                padding: 20px;
+                max-width: 100%;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+        }
     </style>
 </head>
 
 <body>
-
     <div class="container">
-        <h1>Register</h1>
-        <form id="registerForm" method="POST" action="/register">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='logo_web.png') }}" alt="Website Logo" class="logo">
+
+        </div>
+
+        <div class="register-container">
+            <h1>Register</h1>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flashes">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
-                <div id="passwordLengthError" class="error"></div>
-            </div>
-            <div class="form-group">
-                <label for="confirm_password">Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your password"
-                    required>
-                <div id="passwordError" class="error"></div>
-            </div>
-            <div class="form-group">
-                <button type="submit">Register</button>
-            </div>
+            {% endif %}
+            {% endwith %}
+
+            <form id="registerForm" method="POST"
+                style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <div id="passwordLengthError" class="error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password"
+                        placeholder="Confirm your password" required>
+                    <div id="passwordError" class="error"></div>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Register</button>
+                </div>
+            </form>
             <div class="form-group message">
                 <p>Already have an account? <a href="/login">Login</a></p>
             </div>
-        </form>
+        </div>
     </div>
 
     <script>

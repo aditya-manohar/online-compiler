@@ -8,29 +8,36 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background: #222328;
+            background: black;
             color: #e5e5e5;
+            margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
             background-size: 400% 400%;
             animation: gradientAnimation 10s ease infinite;
         }
 
-        @keyframes gradientAnimation {
-            0% {
-                background-position: 0% 50%;
-            }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 20px;
+        }
 
-            50% {
-                background-position: 100% 50%;
-            }
+        .logo-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-            100% {
-                background-position: 0% 50%;
-            }
+        .logo {
+            width: 300px;
+            height: auto;
         }
 
         .login-container {
@@ -137,9 +144,19 @@
             text-decoration: underline;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .logo-section {
+                width: 100%;
+                margin-bottom: 30px;
+            }
+
             .login-container {
                 padding: 20px;
+                max-width: 100%;
             }
 
             h1 {
@@ -150,27 +167,34 @@
 </head>
 
 <body>
-    <div class="login-container">
-        <h1>Login</h1>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-messages">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-                {{ message }}
-            </div>
-            {% endfor %}
+    <div class="container">
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='logo_web.png') }}" alt="Website Logo" class="logo">
         </div>
-        {% endif %}
-        {% endwith %}
 
-        <form method="POST" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
-        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
+        <div class="login-container">
+            <h1>Login</h1>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flashes">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <input type="email" name="email" placeholder="Email" required aria-label="Email" autocomplete="email">
+                <input type="password" name="password" placeholder="Password" required aria-label="Password"
+                    autocomplete="current-password">
+                <button type="submit">Login</button>
+            </form>
+            <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a>.</p>
+        </div>
     </div>
 </body>
 
