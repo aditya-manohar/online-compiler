@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
     <style>
         body {
             margin: 0;
@@ -243,6 +245,19 @@
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC0nFgF4pmfabK1LnoDXetM4tr064xIlY4",
+            authDomain: "evolve-24df5.firebaseapp.com",
+            projectId: "evolve-24df5",
+            storageBucket: "evolve-24df5.firebasestorage.app",
+            messagingSenderId: "66114093472",
+            appId: "1:66114093472:web:1ff5aa8d7a46cd3fc9e4c5",
+            measurementId: "G-VN0DS9NHSN"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
         document.getElementById("registerForm").addEventListener("submit", function (event) {
             // Get the values of the password and confirm password fields
             const password = document.getElementById("password").value;

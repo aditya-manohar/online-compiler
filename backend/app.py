@@ -3,9 +3,11 @@ from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_mail import Mail, Message
 import os
 import subprocess
 import torch
+import random
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from models import db,User
 
@@ -13,6 +15,16 @@ app = Flask(__name__,template_folder='../frontend',static_folder='../frontend/st
 app.config['SECRET_KEY'] = '9b3c7cabc49e4f8e8c676b04fa35f37a47c95195e1674e36e1a9d47bcd1935fd'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'adityamanohar2004@gmail.com'
+app.config['MAIL_PASSWORD'] = 'Manu20004'
+app.config['MAIL_USE_TLS'] = True 
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_DEFAULT_SENDER'] = 'adityamanohar2004@gmail.com'
+
+mail = Mail(app)
 
 login_manager = LoginManager(app)
 db.init_app(app)
@@ -31,8 +43,11 @@ model = AutoModelForCausalLM.from_pretrained(model_name).to('cpu')
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+otp_storage = {}
+
 with app.app_context():
     db.create_all()
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -41,18 +56,51 @@ def register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         
-        # Check if password length is at least 6 characters
         if len(password) < 6:
             return render_template('register.html', error="Password must be at least 6 characters!")
-        
-        # Check if password and confirm password match
         if password != confirm_password:
             return render_template('register.html', error="Passwords do not match.")
         
-        # Proceed with registration logic here (e.g., saving to the database)
-        return redirect(url_for('login'))
+        user = User.query.filter_by(email=email).first()
+        if user:
+            flash('Email address already exists.', 'danger')
+            return redirect(url_for('register'))
+        
+        otp = random.randint(100000, 999999)
+        otp_storage[email] = {'otp': otp, 'password': password}
+
+        try:
+            msg = Message('OTP for registration', recipients=[email])
+            msg.body = f'Your OTP for registration is {otp}'
+            mail.send(msg)
+            flash('OTP sent to your email address.', 'success')
+            session['temp_email'] = email
+            return redirect(url_for('verify_otp', email=email))
+        except Exception as e:
+            flash('Error sending email. Please try again.', 'danger')
+            return redirect(url_for('register'))
     
     return render_template('register.html')
+
+@app.route('/verify_otp', methods=['GET', 'POST'])
+def verify_otp():
+    if request.method == 'POST':
+        email = session.get('temp_email')
+        entered_otp = request.form['otp']
+
+        if email in otp_storage and otp_storage[email]['otp'] == int(entered_otp):
+            password = otp_storage[email]['password']
+            new_user = User(email=email, password=generate_password_hash(password, method='sha256'))
+            db.session.add(new_user)
+            db.session.commit()
+
+            del otp_storage[email]
+            session.pop('temp_email', None)
+            flash('Account created successfully. Please login.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('Invalid OTP. Please try again.', 'danger')
+    return render_template('verify_otp.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
